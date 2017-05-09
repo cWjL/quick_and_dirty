@@ -1,5 +1,5 @@
 # Password-Crack
-Tested on debian 8.
+Tested on debian 8 with python 2.7.
 
 Check a hashed password against a provided word list.
 
