@@ -21,19 +21,19 @@ def check_hash(argv):
             if hashlib.md5(line).hexdigest() == hash_str:
                 print'\n[>] md5 hashed password found: ' + line
                 print '[*] Elapsed time: %s seconds' % (time.time() - start) + '\n'
-                sys.exit()
+                sys.exit(0)
             elif hashlib.sha224(line).hexdigest() == hash_str:
                 print'\n[>] sha224 hashed password found: ' + line
                 print'[*] Elapsed time: %s seconds' % (time.time() - start) + '\n'
-                sys.exit() 
+                sys.exit(0) 
             elif hashlib.sha384(line).hexdigest() == hash_str:
                 print'\n[>] sha384 hashed password found: ' + line
                 print'[*] Elapsed time: %s seconds' % (time.time() - start) + '\n'
-                sys.exit()
+                sys.exit(0)
             elif hashlib.sha512(line).hexdigest() == hash_str:
                 print'\n[>] sha512 hashed password found: ' + line
                 print'[*] Elapsed time: %s seconds' % (time.time() - start) + '\n'
-                sys.exit()
+                sys.exit(0)
             elif hashlib.sha1(line).hexdigest() == hash_str:
                 print'\n[>] sha1 hashed password found: ' + line
                 print '[*] Elapsed time: %s seconds' % (time.time() - start) + '\n'
@@ -41,17 +41,17 @@ def check_hash(argv):
             elif hashlib.sha256(line).hexdigest() == hash_str:
                 print'\n[>] sha256 hashed password found: ' + line
                 print '[*] Elapsed time: %s seconds' % (time.time() - start) + '\n'
-                sys.exit()
+                sys.exit(0)
             elif lmhash.hash(line) == hash_str:
                 print'\n[>] LM hashed password found: ' + line
                 print '[*] Elapsed time: %s seconds' % (time.time() - start) + '\n'
-                sys.exit()
+                sys.exit(0)
             i += 1
         
     print'\n[x] No passwords found!'
     print'[*] Goodbye!'
         
-    sys.exit()
+    sys.exit(0)
  
 #Get the number of lines in the wordlist    
 def file_len(in_file):
@@ -68,13 +68,13 @@ def usage():
     print'the "unhashed" plaintext password and hash algorithm will be presented.\n\n'
     print'To hash string from terminal use echo with -n flag and pipe to desired hash\n'
     print'\tEX: echo -n qwerty | md5sum\n'
-    sys.exit()
+    sys.exit(0)
    
 #Script entry 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         usage()
-        sys.exit()
+        sys.exit(1)
         
     print'\n[*] Depending on the size of the wordlist, this may take several minutes...'
     time.sleep(1)
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     except IOError:
         print '[x] "' + sys.argv[1] + '" not found!  Check the path and try again.'
         print'[x] Get your life together!\n'
-        sys.exit()
+        sys.exit(2)
     
     
     
