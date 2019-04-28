@@ -1,9 +1,9 @@
-# Password-Crack
+# quick_hash
 Tested on debian 8 with python 2.7.
 
 Check a hashed password against a provided word list.
 
-Usage:  hash_compare.py [path-to-wordlist] [hashed-password]
+Usage:  quick_hash.py [path-to-wordlist] [hashed-password]
 
 Script will run [hashed-password] against the contents of the supplied wordlist by checking
 every line in the file using md5, sha1, sha224, sha256, sha512, and LM hashing algorithms.
