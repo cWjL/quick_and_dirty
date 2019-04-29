@@ -27,6 +27,7 @@ def main():
     except ImportError:
         b_prefix = "[ FAIL ] "
         g_prefix = "[  OK  ] "
+        n_prefix = "[  --  ] "
 
     MAX_THREADS = 10
     workers = []
