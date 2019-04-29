@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+'''
+Test speed against orig version with string: 0839236891
+cat rockyou.txt | grep -n 0839236891
+14344321: 0839236891
+'''
 
 from threading import Thread
 from passlib.hash import lmhash
