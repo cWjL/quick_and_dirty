@@ -3,20 +3,22 @@
 Test speed against orig version with string: 0839236891
 cat rockyou.txt | grep -n 0839236891
 14344321: 0839236891
+echo -n 0839236891 | md5sum
 '''
 
 from threading import Thread
+import multiprocessing
+from multiprocessing import Queue, Process
 from passlib.hash import lmhash
 import hashlib, argparse, sys
 import base64, time
-from queue import Queue
+#from queue import Queue
 from itertools import islice
 
 res_queue = Queue()
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--threads', action='store', dest='threads',help="Max threads. Default 20")
     reqd = parser.add_argument_group('required arguments')
     reqd.add_argument('-w','--wordlist',action='store',dest='list',help='Path to wordlist',required=True)
     reqd.add_argument('-p','--hashed',action='store',dest='hash',help='Hashed string',required=True)
@@ -26,15 +28,15 @@ def main():
         import colorama
         from colorama import Fore, Style
         colorama.init()
-        b_prefix = "["+Fore.RED+" FAIL "+Style.RESET_ALL+"] "
-        g_prefix = "["+Fore.GREEN+"  OK  "+Style.RESET_ALL+"] "
-        n_prefix = "["+Fore.YELLOW+"  --  "+Style.RESET_ALL+"] "
+        b_prefix = "["+Fore.RED+"FAIL"+Style.RESET_ALL+"] "
+        g_prefix = "["+Fore.GREEN+" OK "+Style.RESET_ALL+"] "
+        n_prefix = "["+Fore.YELLOW+" ** "+Style.RESET_ALL+"] "
     except ImportError:
-        b_prefix = "[ FAIL ] "
-        g_prefix = "[  OK  ] "
-        n_prefix = "[  --  ] "
+        b_prefix = "[FAIL] "
+        g_prefix = "[ OK ] "
+        n_prefix = "[ ** ] "
 
-    MAX_THREADS = 10
+    MAX_THREADS = multiprocessing.cpu_count()
     workers = []
 
     try:
@@ -43,9 +45,6 @@ def main():
     except IOError:
         print(b_prefix+"IOError")
         sys.exit(1)
-      
-    if args.threads is not None:
-        MAX_THREADS = args.threads
        
     div = int(sz/MAX_THREADS)
     rem = sz - int(div*MAX_THREADS)
@@ -56,10 +55,16 @@ def main():
     try:
         for turn in range(MAX_THREADS):
             print(n_prefix+"Getting section: "+str(turn), end='\r', flush=True)
-            workers.append(Worker(_div_list(args.list, i, i+incr), args.hash))
+            worker = Worker(_div_list(args.list, i, i+incr), args.hash)
+            worker_p = Process(target=worker.run)
+            workers.append(worker_p)
+            #workers.append(Worker(_div_list(args.list, i, i+incr), args.hash))
             i += incr
-        print(g_prefix+"Getting last section")
-        workers.append(Worker(_div_list(args.list, i, sz), args.hash))
+        if rem > 0:
+            print(g_prefix+"Getting last section")
+            worker = Worker(_div_list(args.list, i, i+incr), args.hash)
+            worker_p = Process(target=worker.run)
+            workers.append(worker_p)
     except IOError:
         print(b_prefix+"IOError")
 
@@ -69,16 +74,14 @@ def main():
     for worker in workers:
         worker.start()
 
-    while len(workers) > 0:
-        time.sleep(0.5)
-        for worker in workers:
-            if not worker.isAlive():
-                workers.remove(worker)
-                print(n_prefix+'Thread {0} done'.format(worker.getName()))
+    for worker in workers:
+        worker.join()
+
 
     print(g_prefix+"All threads complete")
     if not res_queue.empty():
-        print(g_prefix+"Password found: "+res_queue.get())
+        queue_list = list(res_queue.get())
+        print(g_prefix+"Password found: "+queue_list[1]+":"+queue_list[0])
     else:
         print(b_prefix+"No password found")
     
