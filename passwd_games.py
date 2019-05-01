@@ -37,12 +37,19 @@ def main():
         b_prefix = "["+Fore.RED+"FAIL"+Style.RESET_ALL+"] "
         g_prefix = "["+Fore.GREEN+" OK "+Style.RESET_ALL+"] "
         n_prefix = "["+Fore.YELLOW+" ** "+Style.RESET_ALL+"] "
+        rolling_1 = "["+Fore.GREEN+"*   "+Style.RESET_ALL+"] "
+        rolling_2 = "["+Fore.YELLOW+" *  "+Style.RESET_ALL+"] "
+        rolling_3 = "["+Fore.RED+"  * "+Style.RESET_ALL+"] "
+        rolling_4 = "["+Fore.BLUE+"   *"+Style.RESET_ALL+"] "
     except ImportError:
         b_prefix = "[FAIL] "
         g_prefix = "[ OK ] "
         n_prefix = "[ ** ] "
 
-    prefixes = [b_prefix, g_prefix, n_prefix]
+    prefixes = [b_prefix, g_prefix,
+                n_prefix, rolling_1,
+                rolling_2, rolling_3,
+                rolling_4]
 
     found = _check_hash(args.list, args.hash, prefixes)
     if found is not None:
@@ -51,6 +58,18 @@ def main():
         print(b_prefix+"No password found")
         
     sys.exit(0)
+
+def _wait_deco(prefixes):
+    i = 3
+    while True:
+        if not res_queue.empty():
+            break
+        if i % 7 == 0:
+            i = 3
+        print(prefixes[i], end='\r')
+        i += 1
+        time.sleep(.5)
+    
 
 def _check_hash(word_list, hashed, prefixes):
 
@@ -84,6 +103,8 @@ def _check_hash(word_list, hashed, prefixes):
             workers.append(worker_p)
     except IOError:
         print(prefixes[0]+"IOError")
+
+    workers.append(Process(target=_wait_deco, args=(prefixes, )))
 
     print(prefixes[2]+"Created: "+str(len(workers))+" threads")
 
