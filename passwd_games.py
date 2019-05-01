@@ -11,7 +11,7 @@ import multiprocessing
 from multiprocessing import Queue, Process
 from passlib.hash import lmhash
 import hashlib, argparse, sys
-import base64, time
+import base64, time, re
 from itertools import islice
 
 res_queue = Queue()
@@ -88,7 +88,26 @@ def _create_custom(config):
     @return list of custom passwords
     '''
     tmp = 0
-    
+
+def _2_1337(non_1337):
+    '''
+    Leetspeak generator
+
+    @param non-leet string
+    @return leet string
+    '''
+    leet = (
+        (('o', 'O'), '0'),
+        (('i', 'I'), '1'),
+        (('e', 'E'), '3'),
+        (('s', 'S'), '5'),
+        (('a', 'A'), '4'),
+        (('t', 'T'), '7'),
+    )
+    for origs, repl in leet:
+        for orig in origs:
+            non_1337 = non_1337.replace(orig, repl)
+    return non_1337
 
 def _check_hash(word_list, hashed, prefixes):
     '''
@@ -211,7 +230,65 @@ def _wait_deco(prefixes):
         print(prefixes[i], end='\r')
         i += 1
         time.sleep(.5)
-    
+
+class Transform():
+    '''
+    String transformations
+    '''
+    def __init__(self, list):
+        '''
+        Transform constructor
+
+        @param list of words to transform
+        '''
+        self.list = list
+
+    def leet(self, non_leet):
+        '''
+        Leetspeak generator
+        
+        @param non-leet string
+        @return leet string
+        '''
+        leet = (
+            (('o', 'O'), '0'),
+            (('i', 'I'), '1'),
+            (('e', 'E'), '3'),
+            (('s', 'S'), '5'),
+            (('a', 'A'), '4'),
+            (('t', 'T'), '7'),
+        )
+        for origs, repl in leet:
+            for orig in origs:
+                non_1337 = non_1337.replace(orig, repl)
+        return non_1337
+
+    def every_other_upper(self, norm_str):
+        '''
+        Capitalize every other letter of the given string
+
+        @param some string
+        @return string with every other character capitalized
+        '''
+        capital = [False]
+        def repl(some_str):
+            cap[0] = not cap[0]
+            return some_str.group(0).upper() if cap[0] else some_str.group(0).lower()
+        return re.sub(r'[A-Za-z]', repl, norm_str)
+
+    def first_letter_upper(self, norm_str):
+        '''
+        Capitalize first letter of words in string
+
+        @param some string
+        @return string with first letter of all separate words upper case
+        '''
+        def repl(some_str):
+            return some_str.group(1) + some_str.group(2).upper()
+        return re.sub("(^|\s)(\S)", repl, norm_str)
+
+    def _find_indi_words(self, not_div):
+        
 
 class Worker(Thread):
     '''
