@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from passlib.hash import lmhash
 import hashlib, argparse, sys, enchant
-import base64, time, re, string
+import base64, time, re, string, itertools
 from nltk import everygrams
 
 def main():
@@ -106,7 +106,7 @@ def check_words(data):
         "that", "with", "have", "this",
         "will", "your", "from", "they",
         "know", "want", "been", "good",
-        "much", "some", "time"
+        "much", "some", "time", "test"
     ]
 
     dict = enchant.Dict("en_US")
@@ -126,7 +126,26 @@ def check_words(data):
         else:
             legit_words.append(item)
             
+    #return len(list(itertools.permutations(legit_words)))
+            
     return legit_words
+    
+def add_nums(norm_str):
+    '''
+    Adds common password number format to string
+
+    @param some string
+    @return list of new strings
+    '''
+    formatted = []
+    for i in range(0,10):
+        formatted.append(norm_str+str(i))
+
+    for i in range(0,10):
+        for j in range(0,10):
+            formatted.append(norm_str+str(i)+str(j))
+            
+    return formatted
 
 if __name__ == "__main__":
     #main()
@@ -134,5 +153,6 @@ if __name__ == "__main__":
     #print(_2_1337(sys.argv[1]))
     #print(every_other_upper(sys.argv[1]))
     #print(first_letter_upper(sys.argv[1]))
-    print(check_words(sys.argv[1]))
+    #print(check_words(sys.argv[1]))
+    print(add_nums(sys.argv[1]))
 
