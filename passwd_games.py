@@ -24,7 +24,7 @@ def main():
     reqd = parser.add_argument_group('required arguments')
     parser.add_argument('-w','--wordlist',action='store',dest='list',help='Path to wordlist')
     parser.add_argument('-s','--hash-string',action='store',dest='hash',help='Hashed string')
-    parser.add_argument('-c','--custom', action='store',dest='conf',help='Create custom list from [CONF]')
+    parser.add_argument('-c','--custom', action='store_true',dest='conf',help='Create custom list from [CONF]')
     parser.add_argument('-r','--run-custom', action='store_true',dest='run',help='Run custom list')
     parser.add_argument('-f','--save-custom',action='store',dest='save',help='Save custom list as [FILE]')
     
@@ -71,6 +71,7 @@ def main():
     if args.list and args.hash:
         found = _check_hash(args.list, args.hash, prefixes)
     elif args.list and args.hash and args.conf:
+        #generate custom list, add it to args.list list and run it
         
         
     if found is not None:
@@ -231,19 +232,56 @@ def _wait_deco(prefixes):
         i += 1
         time.sleep(.5)
 
-class Transform():
+class Transform(object):
     '''
     String transformations
     '''
-    def __init__(self, list):
+    def __init__(self):
         '''
         Transform constructor
 
         @param list of words to transform
         '''
-        self.list = list
+        try:
+            with open("trans.conf","r") as conf:
+                self.in_list = conf.readlines()
+        except IOError as e:
+            raise IOError("trans.conf not found")
 
-    def leet(self, non_leet):
+    def gen_list(self):
+        '''
+        Generate custom list
+
+        @param none
+        @return custom password list
+        '''
+        tmp = 0
+
+    def _parse_config(self):
+        '''
+        Parse config file
+
+        @param none
+        @return formatted list
+        '''
+        tmp = 0
+        for item in self.in_list:
+            if '#' in item:
+                continue
+            if ',' not in item and ':' not in item:
+                self.inter_list.append(item)
+            elif ',' in item and ':' not in item:
+                self.inter_list.append(item.split(','))
+            elif ',' in item and ':' in item:
+                tmp = item.split(':')
+                self.modifier = {'str':tmp[0],
+                                 'mods':tmp[1]
+                }
+                # figure out how to add items to list to differentiate the different types
+                # of items (single string, string list, two string lists)
+                self.inter_list.append(tmp)
+
+    def _leet(self, non_leet):
         '''
         Leetspeak generator
         
@@ -263,7 +301,7 @@ class Transform():
                 non_1337 = non_1337.replace(orig, repl)
         return non_1337
 
-    def every_other_upper(self, norm_str):
+    def _every_other_upper(self, norm_str):
         '''
         Capitalize every other letter of the given string
 
@@ -276,7 +314,7 @@ class Transform():
             return some_str.group(0).upper() if cap[0] else some_str.group(0).lower()
         return re.sub(r'[A-Za-z]', repl, norm_str)
 
-    def first_letter_upper(self, norm_str):
+    def _first_letter_upper(self, norm_str):
         '''
         Capitalize first letter of words in string
 
@@ -287,7 +325,36 @@ class Transform():
             return some_str.group(1) + some_str.group(2).upper()
         return re.sub("(^|\s)(\S)", repl, norm_str)
 
-    def _find_indi_words(self, not_div):
+    def _no_spaces(self, norm_str):
+        '''
+        Remove spaces between words
+
+        @param some string
+        @return string with spaces removed
+        '''
+        return norm_str.replace(" ","")
+
+    def _add_nums(self, norm_str):
+        '''
+        Adds common password number formats to string
+
+        @param some string
+        @return list of new strings
+        '''
+        formatted = []
+        for i in range(0,10):
+            formatted.append(norm_str+str(i))
+
+        for i in range(0,10):
+            for j in range(0,10):
+                formatted.append(norm_str+str(i)+str(j))
+
+        for i in range(0,10):
+            for j in range(0,10):
+                for k in range(0,10):
+                    formatted.append(norm_str+str(i)+str(j)+str(k))
+
+        return formatted
         
 
 class Worker(Thread):
