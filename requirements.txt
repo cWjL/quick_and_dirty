@@ -1,0 +1,4 @@
+enchant
+nltk
+colorama
+passlib
