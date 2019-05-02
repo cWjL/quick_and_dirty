@@ -2,6 +2,7 @@
 from passlib.hash import lmhash
 import hashlib, argparse, sys, enchant
 import base64, time, re, string
+from nltk import everygrams
 
 def main():
     passwd = sys.argv[1].rstrip('\n')
@@ -76,28 +77,56 @@ def check_words(data):
     @param alpha_list: characters that should be ignored as "words"
     @return: string if found, None otherwise
     '''
-    #   tesdhellojfkasjdfthereasdkfjasf
-    #and (data[index:i] not in alpha_list) 
-    alpha_list  = ['a','i']
-    index = 0
-    poss_word = ''
-    str_dict = enchant.Dict("en_US")
-    data = data.lower()
-    string_length = 0
-    found_words = []
-    if all(c in string.printable for c in data):
-        for i in range(len(data)+1):
-            try:
-                if i > 1 and str_dict.check(data[index:i]):
-                    found_words.append(data[index:i])
-                    poss_word = poss_word + data[index:i]
-                    index = i
-                    string_length += 1
-            except Exception as e:
-                print("Exception in check_words()")
-                print(e)
-                continue
-    return found_words
+
+    two_letters = [
+        "are", "of", "to", "in",
+        "it", "is", "be", "as",
+        "at", "so", "we", "he",
+        "by", "or", "on", "do",
+        "if", "me", "my", "up",
+        "an", "go", "no", "us",
+        "am"
+    ]
+    	
+    three_letters = [
+        "the", "and", "for", "are",
+        "but", "not", "you", "all",
+        "any", "can", "had", "her",
+        "was", "one", "our", "out",
+        "day", "get", "has", "him",
+        "his", "how", "man", "new",
+        "now", "old", "see", "two",
+        "way", "who", "boy", "did",
+        "its", "let", "put", "say",
+        "she", "too", "use"
+    ]
+
+    	
+    four_letters = [
+        "that", "with", "have", "this",
+        "will", "your", "from", "they",
+        "know", "want", "been", "good",
+        "much", "some", "time"
+    ]
+
+    dict = enchant.Dict("en_US")
+    legit_words = []
+    word_list = [''.join(_ngr) for _ngr in everygrams(data) if dict.check(''.join(_ngr)) and len(_ngr) > 1]
+   
+    for item in word_list:
+        if len(item) == 2:
+            if item in two_letters:
+                legit_words.append(item)
+        elif len(item) == 3:
+            if item in three_letters:
+                legit_words.append(item)
+        elif len(item) == 4:
+            if item in four_letters:
+                legit_words.append(item)
+        else:
+            legit_words.append(item)
+            
+    return legit_words
 
 if __name__ == "__main__":
     #main()
