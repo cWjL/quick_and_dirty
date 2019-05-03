@@ -255,7 +255,7 @@ class Transform(object):
         @param none
         @return custom password list
         '''
-        tmp = 0
+        inter_list = _parse_config()
 
     def _parse_config(self):
         '''
@@ -269,17 +269,23 @@ class Transform(object):
             if '#' in item:
                 continue
             if ',' not in item and ':' not in item:
-                self.inter_list.append(item)
+                data = {'str':item,
+                        'mods':None
+                }
+                inter_list.append(data)
             elif ',' in item and ':' not in item:
-                self.inter_list.append(item.split(','))
+                data = {'str':item.split(','),
+                        'mods':None
+                }
+                inter_list.append(data)
             elif ',' in item and ':' in item:
                 tmp = item.split(':')
-                self.modifier = {'str':tmp[0],
-                                 'mods':tmp[1]
+                data = {'str':tmp[0],
+                        'mods':tmp[1]
                 }
-                # figure out how to add items to list to differentiate the different types
-                # of items (single string, string list, two string lists)
-                self.inter_list.append(tmp)
+                inter_list.append(data)
+
+        return inter_list
 
     def _leet(self, non_leet):
         '''
