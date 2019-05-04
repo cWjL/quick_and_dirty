@@ -61,7 +61,7 @@ def every_other_upper(norm_str):
     capital = [False]
     def repl(some_str):
         capital[0] = not capital[0]
-        return some_str.group(0).upper() if capital[0] else some_str.group(0).lower()
+        return some_str.group(0).lower() if capital[0] else some_str.group(0).upper()
     return re.sub(r'[A-Za-z]', repl, norm_str)
 
 def first_letter_upper(norm_str):
@@ -151,8 +151,8 @@ if __name__ == "__main__":
     #main()
     #test_bed(sys.argv[1])
     #print(_2_1337(sys.argv[1]))
-    #print(every_other_upper(sys.argv[1]))
+    print(every_other_upper(sys.argv[1]))
     #print(first_letter_upper(sys.argv[1]))
     #print(check_words(sys.argv[1]))
-    print(add_nums(sys.argv[1]))
+    #print(add_nums(sys.argv[1]))
 

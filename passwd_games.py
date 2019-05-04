@@ -55,7 +55,7 @@ def main():
                 rolling_2, rolling_3,
                 rolling_4]
 
-    if not args.list and not args.hash and not args.cust:
+    if not args.list and not args.hash and not args.conf:
         print(b_refix+"You didn't supply any arguments")
         parser.print_help()
         sys.exit(0)
@@ -64,14 +64,21 @@ def main():
         parser.print_help()
         sys.exit(0)
     elif args.conf and not (args.run or args.save):
-        print(b_refix+"You must supply either \'-r\' or \'-f\' with this option")
-        parser.print_help()
+        try:
+            trans = Transform()
+        except IOError:
+            print("Config file not found")
+            syy.exit(1)
+        print(trans.gen_list())
+        #print(b_refix+"You must supply either \'-r\' or \'-f\' with this option")
+        #parser.print_help()
         sys.exit(0)
 
     if args.list and args.hash:
         found = _check_hash(args.list, args.hash, prefixes)
     elif args.list and args.hash and args.conf:
         #generate custom list, add it to args.list list and run it
+        tmp = 0
         
         
     if found is not None:
@@ -250,12 +257,85 @@ class Transform(object):
 
     def gen_list(self):
         '''
-        Generate custom list
+        Return custom list
 
         @param none
         @return custom password list
         '''
+        #return self._parse_config()
         inter_list = _parse_config()
+        return _xform(inter_list)
+
+    def get_config(self):
+        '''
+        Return config list
+
+        @param none
+        @reutrn stripped config list
+        '''
+        return self.in_list
+    
+    def _xform(self, inter_list):
+        '''
+        Generate custom list from config rules
+        
+        @param parsed config list
+        @return custom list
+        '''
+        final_list = []
+        for item in inter_list:
+            if item.get('mods') is None:
+                if len(item.get('str')) > 1:
+                    final_list.extend(self._mod_str_list(item.get('str')))
+                else:
+                    final_list.extend()
+
+    def _mod_str(self, in_str):
+        '''
+        Mod string
+
+        @param string
+        @return modified string list
+        '''
+        final_list = []
+        final_list.append(in_str)
+        final_list.append(self._every_other_upper(in_str))
+        final_list.append(self._leet(in_str))
+        final_list.append(self._first_letter_upper_leading(in_str))
+        final_list.append(self._first_letter_upper_trailing(in_str))
+        final_list.extend(self._add_nums(in_str))
+        final_list.extend(self._spcl_chars(in_str))
+        final_list.extend(self._spcl_chars(in_str))
+        final_list.extend(self._spcl_chars(self._leet(in_str)))
+        final_list.extend(self._spcl_chars(self._first_letter_upper_leading(in_str)))
+        final_list.extend(self._spcl_chars(self._first_letter_upper_trailing(in_str)))
+        final_list.extend(self._spcl_chars(self._add_nums(in_str)))
+
+        if " " in in_str:
+            no_space = self._no_spaces(in_str)
+            final_list.append(no_space)
+            final_list.append(self._every_other_upper(no_space))
+            final_list.append(self._leet(no_space))
+            final_list.append(self._first_letter_upper_leading(no_space))
+            final_list.append(self._first_letter_upper_trailing(no_space))
+            final_list.extend(self._add_nums(no_space))
+            final_list.extend(self.spcl_chars(no_space))
+            final_list.extend(self.spcl_chars(self._every_other_upper(no_space)))
+            final_list.extend(self.spcl_chars(self._leet(no_space)))
+            final_list.extend(self.spcl_chars(self._first_letter_upper_leading(no_space))
+            final_list.extend(self.spcl_chars(self._first_letter_upper_trailing(no_space)))
+            final_list.extend(self.spcl_chars(self._add_nums(no_space)))
+
+        return final_list
+                              
+    def _mod_str_list(self, in_str_lst):
+        '''
+        Mod string list
+
+        @param string list
+        @return modified string list appended to orig list
+        '''
+        
 
     def _parse_config(self):
         '''
@@ -265,29 +345,52 @@ class Transform(object):
         @return formatted list
         '''
         tmp = 0
+        inter_list = []
         for item in self.in_list:
-            if '#' in item:
-                continue
-            if ',' not in item and ':' not in item:
-                data = {'str':item,
-                        'mods':None
-                }
-                inter_list.append(data)
-            elif ',' in item and ':' not in item:
-                data = {'str':item.split(','),
-                        'mods':None
-                }
-                inter_list.append(data)
-            elif ',' in item and ':' in item:
-                tmp = item.split(':')
-                data = {'str':tmp[0],
-                        'mods':tmp[1]
-                }
-                inter_list.append(data)
+            if item is not '\n':
+                if '#' in item:
+                    continue
+                if ',' not in item and ':' not in item:
+                    data = {'str':item,
+                            'mods':None
+                    }
+                    inter_list.append(data)
+                elif ',' in item and ':' not in item:
+                    data = {'str':item.split(','),
+                            'mods':None
+                    }
+                    inter_list.append(data)
+                elif ',' in item and ':' in item:
+                    tmp = item.split(':')
+                    data = {'str':tmp[0],
+                            'mods':tmp[1]
+                    }
+                    inter_list.append(data)
 
         return inter_list
 
-    def _leet(self, non_leet):
+    def _spcl_chars(self, in_lst):
+        '''
+        Add special characters to string
+
+        @param string list
+        @return string list with special characters appended
+        '''
+        final_list = []
+        spcl_chars = ["!","@",
+                      "#","$",
+                      "%","^",
+                      "&","*",
+                      "(",")"
+        ]
+        for item in in_list:
+            for spcl in spcl_chars:
+                final_list.append(item+spcl)
+                final_list.append(spcl+item)
+
+        return final_list
+
+    def _leet(self, in_str):
         '''
         Leetspeak generator
         
@@ -307,9 +410,9 @@ class Transform(object):
                 non_1337 = non_1337.replace(orig, repl)
         return non_1337
 
-    def _every_other_upper(self, norm_str):
+    def _every_other_upper_leading(self, in_str):
         '''
-        Capitalize every other letter of the given string
+        Capitalize every other letter of the given string beginning at index 0
 
         @param some string
         @return string with every other character capitalized
@@ -320,7 +423,20 @@ class Transform(object):
             return some_str.group(0).upper() if cap[0] else some_str.group(0).lower()
         return re.sub(r'[A-Za-z]', repl, norm_str)
 
-    def _first_letter_upper(self, norm_str):
+    def _every_other_upper_trailing(self, in_str):
+        '''
+        Capitalize every other letter of the given string beginning at index 1
+
+        @param some string
+        @return string with every other character capitalized
+        '''
+        capital = [False]
+        def repl(some_str):
+            cap[0] = not cap[0]
+            return some_str.group(0).lower() if cap[0] else some_str.group(0).upper()
+        return re.sub(r'[A-Za-z]', repl, norm_str)
+
+    def _first_letter_upper(self, in_str):
         '''
         Capitalize first letter of words in string
 
@@ -331,7 +447,7 @@ class Transform(object):
             return some_str.group(1) + some_str.group(2).upper()
         return re.sub("(^|\s)(\S)", repl, norm_str)
 
-    def _no_spaces(self, norm_str):
+    def _no_spaces(self, in_str):
         '''
         Remove spaces between words
 
@@ -340,7 +456,7 @@ class Transform(object):
         '''
         return norm_str.replace(" ","")
 
-    def _add_nums(self, norm_str):
+    def _add_nums(self, in_str):
         '''
         Adds common password number formats to string
 
