@@ -11,7 +11,7 @@ import multiprocessing
 from multiprocessing import Queue, Process
 from passlib.hash import lmhash
 import hashlib, argparse, sys
-import base64, time, re
+import base64, time, re, random
 from itertools import islice
 
 res_queue = Queue()
@@ -66,10 +66,15 @@ def main():
     elif args.conf and not (args.run or args.save):
         try:
             trans = Transform()
+            tmp = trans.gen_list()
         except IOError:
             print("Config file not found")
-            syy.exit(1)
-        print(trans.gen_list())
+            sys.exit(1)
+        with open("debug.txt", "w+") as test:
+            for item in tmp:
+                test.write("{}\n".format(item))
+            
+        #print(trans.gen_list())
         #print(b_refix+"You must supply either \'-r\' or \'-f\' with this option")
         #parser.print_help()
         sys.exit(0)
@@ -96,26 +101,6 @@ def _create_custom(config):
     @return list of custom passwords
     '''
     tmp = 0
-
-def _2_1337(non_1337):
-    '''
-    Leetspeak generator
-
-    @param non-leet string
-    @return leet string
-    '''
-    leet = (
-        (('o', 'O'), '0'),
-        (('i', 'I'), '1'),
-        (('e', 'E'), '3'),
-        (('s', 'S'), '5'),
-        (('a', 'A'), '4'),
-        (('t', 'T'), '7'),
-    )
-    for origs, repl in leet:
-        for orig in origs:
-            non_1337 = non_1337.replace(orig, repl)
-    return non_1337
 
 def _check_hash(word_list, hashed, prefixes):
     '''
@@ -203,9 +188,7 @@ def _prepend(fp, custom, prefixes):
                 
     print(prefixex[1]+"Copy done. New file: "+file_path+"new_"+file_name)
 
-    return file_path+"new_"+file_name
-            
-            
+    return file_path+"new_"+file_name        
 
 def _div_list(fp, begin, end):
     '''
@@ -263,8 +246,8 @@ class Transform(object):
         @return custom password list
         '''
         #return self._parse_config()
-        inter_list = _parse_config()
-        return _xform(inter_list)
+        inter_list = self._parse_config()
+        return self._xform(inter_list)
 
     def get_config(self):
         '''
@@ -285,10 +268,13 @@ class Transform(object):
         final_list = []
         for item in inter_list:
             if item.get('mods') is None:
-                if len(item.get('str')) > 1:
-                    final_list.extend(self._mod_str_list(item.get('str')))
+                if len(item.get('str').split(',')) > 1:
+                    final_list.extend(self._mod_str_list(self._str_combine(item.get('str'))))
                 else:
-                    final_list.extend()
+                    
+                    final_list.extend(self._mod_str(item.get('str').strip('\n')))
+
+        return final_list
 
     def _mod_str(self, in_str):
         '''
@@ -299,31 +285,32 @@ class Transform(object):
         '''
         final_list = []
         final_list.append(in_str)
-        final_list.append(self._every_other_upper(in_str))
+        final_list.append(self._every_other_upper_leading(in_str))
+        final_list.append(self._every_other_upper_trailing(in_str))
         final_list.append(self._leet(in_str))
-        final_list.append(self._first_letter_upper_leading(in_str))
-        final_list.append(self._first_letter_upper_trailing(in_str))
+        final_list.append(self._first_letter_upper(in_str))
+        
         final_list.extend(self._add_nums(in_str))
         final_list.extend(self._spcl_chars(in_str))
-        final_list.extend(self._spcl_chars(in_str))
         final_list.extend(self._spcl_chars(self._leet(in_str)))
-        final_list.extend(self._spcl_chars(self._first_letter_upper_leading(in_str)))
-        final_list.extend(self._spcl_chars(self._first_letter_upper_trailing(in_str)))
-        final_list.extend(self._spcl_chars(self._add_nums(in_str)))
+        final_list.extend(self._spcl_chars(self._first_letter_upper(in_str)))
+        final_list.extend(self._spcl_chars(self._every_other_upper_leading(in_str)))
+        final_list.extend(self._spcl_chars(self._every_other_upper_trailing(in_str)))
+        final_list.extend(self._spcl_chars_lst(self._add_nums(in_str)))
 
         if " " in in_str:
             no_space = self._no_spaces(in_str)
             final_list.append(no_space)
-            final_list.append(self._every_other_upper(no_space))
+            final_list.append(self._every_other_upper_leading(no_space))
+            final_list.append(self._every_other_upper_trailing(no_space))
             final_list.append(self._leet(no_space))
-            final_list.append(self._first_letter_upper_leading(no_space))
-            final_list.append(self._first_letter_upper_trailing(no_space))
+            final_list.append(self._first_letter_upper(no_space))
             final_list.extend(self._add_nums(no_space))
             final_list.extend(self.spcl_chars(no_space))
-            final_list.extend(self.spcl_chars(self._every_other_upper(no_space)))
+            final_list.extend(self.spcl_chars(self._every_other_upper_leading(no_space)))
+            final_list.extend(self.spcl_chars(self._every_other_upper_trailing(no_space)))
             final_list.extend(self.spcl_chars(self._leet(no_space)))
-            final_list.extend(self.spcl_chars(self._first_letter_upper_leading(no_space))
-            final_list.extend(self.spcl_chars(self._first_letter_upper_trailing(no_space)))
+            final_list.extend(self.spcl_chars(self._first_letter_upper(no_space)))
             final_list.extend(self.spcl_chars(self._add_nums(no_space)))
 
         return final_list
@@ -335,7 +322,83 @@ class Transform(object):
         @param string list
         @return modified string list appended to orig list
         '''
+
+    def _str_combine(self, in_lst):
+        '''
+        Combine strings in list is various ways
+
+        @param string list
+        @return combined string list
+        '''
+        final_list = []
+        combiners = [
+            "and",
+            "or",
+            "with"
+        ]
+        inter_list = []
+        com_str = ""
         
+        # combine names in in_lst order
+        for item in in_lst:
+            com_str += item+" "
+            
+        inter_list.append(com_str.rstrip(" "))
+        com_str = ""
+
+        # combine names in reverse in_lst order
+        for item in reversed(in_lst):
+            com_str += item+" "
+
+        inter_list.append(com_str.rstrip(" "))
+
+        # add combiners in between, in both fwd and rev orders
+        for com in combiners:
+            tmp = ""
+            for item in in_lst:
+                tmp += item +" "+com+" "
+            inter_list.append(tmp.rstrip(" "))
+            tmp = ""
+            for item in reversed(in_lst):
+                tmp += item +" "+com+" "
+            inter_list.append(tmp.rstrip(" "))
+
+        if len(in_lst) > 2:
+            # shuffle list a few times
+            for i in range(len(in_lst)):
+                # create random order 1
+                random.shuffle(in_lst)
+                # combine names in in_lst order
+                for item in in_lst:
+                    com_str += item+" "
+            
+                inter_list.append(com_str.rstrip(" "))
+                com_str = ""
+
+                # combine names in reverse in_lst order
+                for item in reversed(in_lst):
+                    com_str += item+" "
+
+                inter_list.append(com_str.rstrip(" "))
+
+                # add combiners in between, in both fwd and rev orders
+                for com in combiners:
+                    tmp = ""
+                    for item in in_lst:
+                        tmp += item +" "+com+" "
+                    inter_list.append(tmp.rstrip(" "))
+                    tmp = ""
+                    for item in reversed(in_lst):
+                        tmp += item +" "+com+" "
+                    inter_list.append(tmp.rstrip(" "))
+
+        for item in inter_list:
+            final_list.append(item)
+            final_list.append(self._first_letter_upper(item))
+            final_list.append(self._no_spaces(self._first_letter_upper(item)))
+            final_list.append(self._no_spaces(item))
+
+        return final_list
 
     def _parse_config(self):
         '''
@@ -369,7 +432,7 @@ class Transform(object):
 
         return inter_list
 
-    def _spcl_chars(self, in_lst):
+    def _spcl_chars_lst(self, in_lst):
         '''
         Add special characters to string
 
@@ -383,13 +446,33 @@ class Transform(object):
                       "&","*",
                       "(",")"
         ]
-        for item in in_list:
+        for item in in_lst:
             for spcl in spcl_chars:
                 final_list.append(item+spcl)
                 final_list.append(spcl+item)
 
         return final_list
 
+    def _spcl_chars(self, in_str):
+        '''
+        Add special characters to string
+
+        @param string
+        @return string list with special characters appended
+        '''
+        final_list = []
+        spcl_chars = ["!","@",
+                      "#","$",
+                      "%","^",
+                      "&","*",
+                      "(",")"
+        ]
+        for spcl in spcl_chars:
+            final_list.append(in_str+spcl)
+            final_list.append(spcl+in_str)
+
+        return final_list
+        
     def _leet(self, in_str):
         '''
         Leetspeak generator
@@ -407,8 +490,8 @@ class Transform(object):
         )
         for origs, repl in leet:
             for orig in origs:
-                non_1337 = non_1337.replace(orig, repl)
-        return non_1337
+                in_str = in_str.replace(orig, repl)
+        return in_str
 
     def _every_other_upper_leading(self, in_str):
         '''
@@ -419,9 +502,9 @@ class Transform(object):
         '''
         capital = [False]
         def repl(some_str):
-            cap[0] = not cap[0]
-            return some_str.group(0).upper() if cap[0] else some_str.group(0).lower()
-        return re.sub(r'[A-Za-z]', repl, norm_str)
+            capital[0] = not capital[0]
+            return some_str.group(0).upper() if capital[0] else some_str.group(0).lower()
+        return re.sub(r'[A-Za-z]', repl, in_str)
 
     def _every_other_upper_trailing(self, in_str):
         '''
@@ -432,9 +515,9 @@ class Transform(object):
         '''
         capital = [False]
         def repl(some_str):
-            cap[0] = not cap[0]
-            return some_str.group(0).lower() if cap[0] else some_str.group(0).upper()
-        return re.sub(r'[A-Za-z]', repl, norm_str)
+            capital[0] = not capital[0]
+            return some_str.group(0).lower() if capital[0] else some_str.group(0).upper()
+        return re.sub(r'[A-Za-z]', repl, in_str)
 
     def _first_letter_upper(self, in_str):
         '''
@@ -445,7 +528,7 @@ class Transform(object):
         '''
         def repl(some_str):
             return some_str.group(1) + some_str.group(2).upper()
-        return re.sub("(^|\s)(\S)", repl, norm_str)
+        return re.sub("(^|\s)(\S)", repl, in_str)
 
     def _no_spaces(self, in_str):
         '''
@@ -454,7 +537,7 @@ class Transform(object):
         @param some string
         @return string with spaces removed
         '''
-        return norm_str.replace(" ","")
+        return in_str.replace(" ","")
 
     def _add_nums(self, in_str):
         '''
@@ -465,16 +548,16 @@ class Transform(object):
         '''
         formatted = []
         for i in range(0,10):
-            formatted.append(norm_str+str(i))
+            formatted.append(in_str+str(i))
 
         for i in range(0,10):
             for j in range(0,10):
-                formatted.append(norm_str+str(i)+str(j))
+                formatted.append(in_str+str(i)+str(j))
 
         for i in range(0,10):
             for j in range(0,10):
                 for k in range(0,10):
-                    formatted.append(norm_str+str(i)+str(j)+str(k))
+                    formatted.append(in_str+str(i)+str(j)+str(k))
 
         return formatted
         
