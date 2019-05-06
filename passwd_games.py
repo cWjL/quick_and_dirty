@@ -70,9 +70,11 @@ def main():
         except IOError:
             print("Config file not found")
             sys.exit(1)
+        ############## DEBUG ################################################################
         with open("debug.txt", "w+") as test:
             for item in tmp:
                 test.write("{}\n".format(item))
+        ####################################################################################
             
         #print(trans.gen_list())
         #print(b_refix+"You must supply either \'-r\' or \'-f\' with this option")
@@ -268,10 +270,10 @@ class Transform(object):
         final_list = []
         for item in inter_list:
             if item.get('mods') is None:
-                if len(item.get('str').split(',')) > 1:
-                    final_list.extend(self._mod_str_list(self._str_combine(item.get('str'))))
+
+                if isinstance(item.get('str'), list):
+                    final_list.extend(self._mod_str(self._str_combine(item.get('str'))))
                 else:
-                    
                     final_list.extend(self._mod_str(item.get('str').strip('\n')))
 
         return final_list
@@ -284,44 +286,83 @@ class Transform(object):
         @return modified string list
         '''
         final_list = []
-        final_list.append(in_str)
-        final_list.append(self._every_other_upper_leading(in_str))
-        final_list.append(self._every_other_upper_trailing(in_str))
-        final_list.append(self._leet(in_str))
-        final_list.append(self._first_letter_upper(in_str))
-        
-        final_list.extend(self._add_nums(in_str))
-        final_list.extend(self._spcl_chars(in_str))
-        final_list.extend(self._spcl_chars(self._leet(in_str)))
-        final_list.extend(self._spcl_chars(self._first_letter_upper(in_str)))
-        final_list.extend(self._spcl_chars(self._every_other_upper_leading(in_str)))
-        final_list.extend(self._spcl_chars(self._every_other_upper_trailing(in_str)))
-        final_list.extend(self._spcl_chars_lst(self._add_nums(in_str)))
+        if isinstance(in_str, str):
+            inter_list = []
+            # build base strings
+            inter_list.append(in_str)
+            inter_list.append(self._every_other_upper_leading(in_str))
+            inter_list.append(self._every_other_upper_trailing(in_str))
+            inter_list.append(self._leet(in_str))
+            inter_list.append(self._first_letter_upper(in_str))
+            final_list.extend(inter_list)
+            # send list of base strings to remaining modifiers
+            for item in inter_list:
+                final_list.extend(self._add_nums(item))
+                final_list.extend(self._spcl_chars(item))
+                final_list.extend(self._spcl_chars(self._leet(item)))
+                final_list.extend(self._spcl_chars(self._first_letter_upper(item)))
+                final_list.extend(self._spcl_chars(self._every_other_upper_leading(item)))
+                final_list.extend(self._spcl_chars(self._every_other_upper_trailing(item)))
+                final_list.extend(self._spcl_chars_lst(self._add_nums(item)))
 
-        if " " in in_str:
-            no_space = self._no_spaces(in_str)
-            final_list.append(no_space)
-            final_list.append(self._every_other_upper_leading(no_space))
-            final_list.append(self._every_other_upper_trailing(no_space))
-            final_list.append(self._leet(no_space))
-            final_list.append(self._first_letter_upper(no_space))
-            final_list.extend(self._add_nums(no_space))
-            final_list.extend(self.spcl_chars(no_space))
-            final_list.extend(self.spcl_chars(self._every_other_upper_leading(no_space)))
-            final_list.extend(self.spcl_chars(self._every_other_upper_trailing(no_space)))
-            final_list.extend(self.spcl_chars(self._leet(no_space)))
-            final_list.extend(self.spcl_chars(self._first_letter_upper(no_space)))
-            final_list.extend(self.spcl_chars(self._add_nums(no_space)))
+            if " " in in_str:
+                no_space = self._no_spaces(in_str)
+                inter_list = []
+                # build base strings
+                inter_list.append(no_space)
+                inter_list.append(self._every_other_upper_leading(no_space))
+                inter_list.append(self._every_other_upper_trailing(no_space))
+                inter_list.append(self._leet(no_space))
+                inter_list.append(self._first_letter_upper(no_space))
+                final_list.extend(inter_list)
+                # send list of base strings to remaining modifiers
+                for item in inter_list:
+                    final_list.extend(self._add_nums(item))
+                    final_list.extend(self.spcl_chars(item))
+                    final_list.extend(self.spcl_chars(self._every_other_upper_leading(item)))
+                    final_list.extend(self.spcl_chars(self._every_other_upper_trailing(item)))
+                    final_list.extend(self.spcl_chars(self._leet(item)))
+                    final_list.extend(self.spcl_chars(self._first_letter_upper(item)))
+                    final_list.extend(self.spcl_chars(self._add_nums(item)))
+        elif isinstance(in_str, list):
+            for item in in_str:
+                inter_list = []
+                # build base strings
+                inter_list.append(item)
+                inter_list.append(self._every_other_upper_leading(item))
+                inter_list.append(self._every_other_upper_trailing(item))
+                inter_list.append(self._leet(item))
+                inter_list.append(self._first_letter_upper(item))
+                final_list.extend(inter_list)
+                # send list of base strings to remaining modifiers
+                for word in inter_list:
+                    final_list.extend(self._add_nums(word))
+                    final_list.extend(self._spcl_chars(word))
+                    final_list.extend(self._spcl_chars(self._leet(word)))
+                    final_list.extend(self._spcl_chars(self._first_letter_upper(word)))
+                    final_list.extend(self._spcl_chars(self._every_other_upper_leading(word)))
+                    final_list.extend(self._spcl_chars(self._every_other_upper_trailing(word)))
+                    final_list.extend(self._spcl_chars_lst(self._add_nums(word)))
+
+                if " " in in_str:
+                    no_space = self._no_spaces(in_str)
+                    inter_list = []
+                    inter_list.append(no_space)
+                    inter_list.append(self._every_other_upper_leading(no_space))
+                    inter_list.append(self._every_other_upper_trailing(no_space))
+                    inter_list.append(self._leet(no_space))
+                    inter_list.append(self._first_letter_upper(no_space))
+                    final_list.extend(inter_list)
+                    for word in inter_list:
+                        final_list.extend(self._add_nums(word))
+                        final_list.extend(self.spcl_chars(word))
+                        final_list.extend(self.spcl_chars(self._every_other_upper_leading(word)))
+                        final_list.extend(self.spcl_chars(self._every_other_upper_trailing(word)))
+                        final_list.extend(self.spcl_chars(self._leet(word)))
+                        final_list.extend(self.spcl_chars(self._first_letter_upper(word)))
+                        final_list.extend(self.spcl_chars(self._add_nums(word)))
 
         return final_list
-                              
-    def _mod_str_list(self, in_str_lst):
-        '''
-        Mod string list
-
-        @param string list
-        @return modified string list appended to orig list
-        '''
 
     def _str_combine(self, in_lst):
         '''
@@ -357,11 +398,13 @@ class Transform(object):
             tmp = ""
             for item in in_lst:
                 tmp += item +" "+com+" "
-            inter_list.append(tmp.rstrip(" "))
+            tmp = tmp.rstrip(" ")
+            inter_list.append(tmp.rstrip(com))
             tmp = ""
             for item in reversed(in_lst):
                 tmp += item +" "+com+" "
-            inter_list.append(tmp.rstrip(" "))
+            tmp = tmp.rstrip(" ")
+            inter_list.append(tmp.rstrip(com))
 
         if len(in_lst) > 2:
             # shuffle list a few times
@@ -411,10 +454,11 @@ class Transform(object):
         inter_list = []
         for item in self.in_list:
             if item is not '\n':
+                item = item.rstrip()
                 if '#' in item:
                     continue
                 if ',' not in item and ':' not in item:
-                    data = {'str':item,
+                    data = {'str':item.rstrip(),
                             'mods':None
                     }
                     inter_list.append(data)
@@ -443,8 +487,7 @@ class Transform(object):
         spcl_chars = ["!","@",
                       "#","$",
                       "%","^",
-                      "&","*",
-                      "(",")"
+                      "&","*"
         ]
         for item in in_lst:
             for spcl in spcl_chars:
@@ -547,6 +590,7 @@ class Transform(object):
         @return list of new strings
         '''
         formatted = []
+        #for item in in_lst:
         for i in range(0,10):
             formatted.append(in_str+str(i))
 
