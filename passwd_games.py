@@ -275,6 +275,9 @@ class Transform(object):
                     final_list.extend(self._mod_str(self._str_combine(item.get('str'))))
                 else:
                     final_list.extend(self._mod_str(item.get('str').strip('\n')))
+            else:
+                if isinstance(item.get('str'), list):
+                    final_list.extend()
 
         return final_list
 
@@ -363,6 +366,52 @@ class Transform(object):
                         final_list.extend(self.spcl_chars(self._add_nums(word)))
 
         return final_list
+
+    def _mod_str_combine(self, in_str, in_mod_lst):
+        '''
+        Combine strings with modifiers
+
+        @param string list
+        @param string modifier list
+        @return combined string list
+        '''
+        final_list = []
+        date_dd_mm_yyyy_sl = re.compile('.*/.*/.*')
+        date_dd_mm_yyyy_ds = re.compile('.*-.*-.*')
+        int_to_str = {
+            0:"zero",1:"one",2:"two",3:"three",4:"four",
+            5:"five",6:"six",7:"seven",8:"eight",9:"nine",
+            10:"ten",11:"eleven",12:"twelve",13:"thirteen",
+            14:"fourteen",15:"fifteen",16:"sixteen",17:"seventeen",
+            18:"eighteen",19:"nineteen",20:"twenty",21:"twentyone",
+            22:"twentytwo",23:"twentythree",24:"twentyfour",25:"twentyfive",
+            26:"twentysix",27:"twentyseven",28:"twentyeight",29:"twentynine",
+            30:"thirty",31:"thirtyone"
+        }
+        if isinstance(in_str, list):
+            final_list.extend(self._str_combine(in_str))
+
+        if isinstance(in_mod_lst, list):
+            for item in in_mod_lst:
+                date_lst = []
+                date_words = ""
+                if date_dd_mm_yyyy_sl.check(item) or date_dd_mm_yyyy_ds.check(item):
+                    if date_dd_mm_yyyy_sl.check(item):
+                        date_lst = item.split('/')
+                    elif date_dd_mm_yyyy_ds.check(item):
+                        date_lst = item.split('-')
+
+                    date_words += int_to_str.get(date_lst[0])+" "
+                    date_words += int_to_str.get(date_lst[1])+" "
+                    year = list(map(int, date_lst[2]))
+                    for digit in year:
+                        date_words += int_to_str.get(digit)+" "
+
+                    date_words.rstrip(" ")
+
+        #################################################################################
+        #### left off here
+            
 
     def _str_combine(self, in_lst):
         '''
