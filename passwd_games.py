@@ -385,12 +385,18 @@ class Transform(object):
         essentially crashes host
         '''
         def _append_to(in_lst, in_str):
-            final_list = in_lst
+            final_list = list(in_lst)
             for item in in_lst:
                 final_list.append(item+in_str)
             return final_list
 
         def _mod(in_str):
+            '''
+            Modify this to include the following
+            EX INPUT: 1/25/1996
+            EX OUTPUT: 1996, 96, jan 25 1996, 25 jan 1996
+            '''
+            final_list = []
             int_to_str = {
                 0:"zero",1:"one",2:"two",3:"three",4:"four",
                 5:"five",6:"six",7:"seven",8:"eight",9:"nine",
@@ -431,6 +437,9 @@ class Transform(object):
                     date_words = in_str
 
             return date_words
+
+        def _date_mod(in_str):
+            
                 
         if isinstance(in_str, list):
             final_list.extend(self._str_combine(in_str))
@@ -443,8 +452,13 @@ class Transform(object):
             for item in in_mod_lst:
                 final_list.extend(_append_to(final_list, _mod(item)))
 
-        #print(len(final_list))
-        #sys.exit(0)
+        ##################################################################
+        ############## DEBUG ############################################
+        print(len(final_list))
+        for item in final_list:
+            print(item)
+        sys.exit(0)
+        #################################################################
         return final_list
 
     def _str_combine(self, in_lst):
