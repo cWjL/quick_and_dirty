@@ -269,6 +269,7 @@ class Transform(object):
         '''
         final_list = []
         for item in inter_list:
+
             if item.get('mods') is None:
 
                 if isinstance(item.get('str'), list):
@@ -276,8 +277,10 @@ class Transform(object):
                 else:
                     final_list.extend(self._mod_str(item.get('str').strip('\n')))
             else:
+                
                 if isinstance(item.get('str'), list):
-                    final_list.extend()
+                    #print("here")
+                    final_list.extend(self._mod_str_combine(item.get('str'),item.get('mods')))
 
         return final_list
 
@@ -376,42 +379,72 @@ class Transform(object):
         @return combined string list
         '''
         final_list = []
-        date_dd_mm_yyyy_sl = re.compile('.*/.*/.*')
-        date_dd_mm_yyyy_ds = re.compile('.*-.*-.*')
-        int_to_str = {
-            0:"zero",1:"one",2:"two",3:"three",4:"four",
-            5:"five",6:"six",7:"seven",8:"eight",9:"nine",
-            10:"ten",11:"eleven",12:"twelve",13:"thirteen",
-            14:"fourteen",15:"fifteen",16:"sixteen",17:"seventeen",
-            18:"eighteen",19:"nineteen",20:"twenty",21:"twentyone",
-            22:"twentytwo",23:"twentythree",24:"twentyfour",25:"twentyfive",
-            26:"twentysix",27:"twentyseven",28:"twentyeight",29:"twentynine",
-            30:"thirty",31:"thirtyone"
-        }
-        if isinstance(in_str, list):
-            final_list.extend(self._str_combine(in_str))
+        '''
+        Using max memory in _append_to
 
-        if isinstance(in_mod_lst, list):
-            for item in in_mod_lst:
+        essentially crashes host
+        '''
+        def _append_to(in_lst, in_str):
+            for item in in_lst:
+                in_lst.append(item+in_str)
+            return in_lst
+
+        def _mod(in_str):
+            int_to_str = {
+                0:"zero",1:"one",2:"two",3:"three",4:"four",
+                5:"five",6:"six",7:"seven",8:"eight",9:"nine",
+                10:"ten",11:"eleven",12:"twelve",13:"thirteen",
+                14:"fourteen",15:"fifteen",16:"sixteen",17:"seventeen",
+                18:"eighteen",19:"nineteen",20:"twenty",21:"twentyone",
+                22:"twentytwo",23:"twentythree",24:"twentyfour",25:"twentyfive",
+                26:"twentysix",27:"twentyseven",28:"twentyeight",29:"twentynine",
+                30:"thirty",31:"thirtyone"
+            }
+            date_dd_mm_yyyy_sl = re.compile('.*/.*/.*')
+            date_dd_mm_yyyy_ds = re.compile('.*-.*-.*')
+            year = re.compile('.{4}')
+            date_words = ""
+            if date_dd_mm_yyyy_sl.match(in_mod_lst) or date_dd_mm_yyyy_ds.match(in_mod_lst):
                 date_lst = []
-                date_words = ""
-                if date_dd_mm_yyyy_sl.check(item) or date_dd_mm_yyyy_ds.check(item):
-                    if date_dd_mm_yyyy_sl.check(item):
-                        date_lst = item.split('/')
-                    elif date_dd_mm_yyyy_ds.check(item):
-                        date_lst = item.split('-')
-
-                    date_words += int_to_str.get(date_lst[0])+" "
-                    date_words += int_to_str.get(date_lst[1])+" "
-                    year = list(map(int, date_lst[2]))
+                if date_dd_mm_yyyy_sl.match(in_mod_lst):
+                    date_lst = in_mod_lst.split('/')
+                elif date_dd_mm_yyyy_ds.match(in_mod_lst):
+                    date_lst = in_mod_lst.split('-')
+                print(date_lst)
+                date_words += int_to_str.get(int(date_lst[0]))+" "
+                date_words += int_to_str.get(int(date_lst[1]))+" "
+                year = list(map(int, date_lst[2]))
+                for digit in year:
+                    date_words += int_to_str.get(digit)+" "
+                # date should now be in the following format
+                # EX: 01/12/1990
+                #     one twelve one nine nine zero
+                date_words.rstrip(" ")
+            else:
+                try:
+                    year = list(map(int, in_str))
                     for digit in year:
                         date_words += int_to_str.get(digit)+" "
-
                     date_words.rstrip(" ")
+                except:
+                    date_words = in_str
 
-        #################################################################################
-        #### left off here
+            return date_words
+                
+        if isinstance(in_str, list):
+            final_list.extend(self._str_combine(in_str))
+        else:
+            final_list.append(in_str)
             
+        if isinstance(in_mod_lst, str):
+            final_list.extend(_append_to(final_list, _mod(in_mod_lst)))
+        else:
+            for item in in_mod_lst:
+                final_list.extend(_append_to(final_list, _mod(item)))
+
+        #print(len(final_list))
+        #sys.exit(0)
+        return final_list
 
     def _str_combine(self, in_lst):
         '''
@@ -516,10 +549,20 @@ class Transform(object):
                             'mods':None
                     }
                     inter_list.append(data)
-                elif ',' in item and ':' in item:
-                    tmp = item.split(':')
-                    data = {'str':tmp[0],
-                            'mods':tmp[1]
+                elif ':' in item:
+                    data_break = item.split(':')
+                    if ',' in data_break[0]:
+                        str_data = data_break[0].split(',')
+                    else:
+                        str_data = data_break[0]
+
+                    if ',' in data_break[1]:
+                        mod_data = data_break[1].split(',')
+                    else:
+                        mod_data = data_break[1]
+                    
+                    data = {'str':str_data,
+                            'mods':mod_data
                     }
                     inter_list.append(data)
 
