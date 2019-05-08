@@ -385,9 +385,10 @@ class Transform(object):
         essentially crashes host
         '''
         def _append_to(in_lst, in_str):
+            final_list = in_lst
             for item in in_lst:
-                in_lst.append(item+in_str)
-            return in_lst
+                final_list.append(item+in_str)
+            return final_list
 
         def _mod(in_str):
             int_to_str = {
