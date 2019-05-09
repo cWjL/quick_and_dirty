@@ -25,8 +25,6 @@ def main():
     parser.add_argument('-w','--wordlist',action='store',dest='list',help='Path to wordlist')
     parser.add_argument('-s','--hash-string',action='store',dest='hash',help='Hashed string')
     parser.add_argument('-c','--custom', action='store_true',dest='conf',help='Create custom list from [CONF]')
-    parser.add_argument('-r','--run-custom', action='store_true',dest='run',help='Run custom list')
-    parser.add_argument('-f','--save-custom',action='store',dest='save',help='Save custom list as [FILE]')
     
     args = parser.parse_args()
 
@@ -56,37 +54,28 @@ def main():
                 rolling_4]
 
     if not args.list and not args.hash and not args.conf:
-        print(b_refix+"You didn't supply any arguments")
+        print(b_prefix+"You didn't supply any arguments")
         parser.print_help()
         sys.exit(0)
-    elif args.list and not args.hash:
-        print(b_refix+"You need to supply a hashed string as an argument")
+    elif args.list and not args.hash or (args.conf and not args.hash):
+        print(b_prefix+"You need to supply a hashed string as an argument")
         parser.print_help()
         sys.exit(0)
-    elif args.conf and not (args.run or args.save):
-        try:
-            trans = Transform()
-            tmp = trans.gen_list()
-        except IOError:
-            print("Config file not found")
-            sys.exit(1)
-        ############## DEBUG ################################################################
-        with open("debug.txt", "w+") as test:
-            for item in tmp:
-                test.write("{}\n".format(item))
-        ####################################################################################
-            
-        #print(trans.gen_list())
-        #print(b_refix+"You must supply either \'-r\' or \'-f\' with this option")
-        #parser.print_help()
+    elif args.list and args.hash and args.conf:
+        print(b_prefix+"Either generate a list or provide one, not both")
+        parser.print_help()
         sys.exit(0)
 
-    if args.list and args.hash:
+    if args.list and args.hash and not args.conf:
         found = _check_hash(args.list, args.hash, prefixes)
-    elif args.list and args.hash and args.conf:
-        #generate custom list, add it to args.list list and run it
-        tmp = 0
-        
+    elif args.hash and args.conf and not args.list:
+        try:
+            _create_custom(prefixes)
+        except IOError as e:
+            print(b_prefix+str(e))
+            sys.exit(1)
+        cust_lst = res_queue.get()
+        found = _check_hash(cust_lst, args.hash, prefixes)
         
     if found is not None:
         print(g_prefix+"Password found: "+found[1]+":"+found[0])
@@ -95,14 +84,26 @@ def main():
         
     sys.exit(0)
 
-def _create_custom(config):
+def _create_custom(prefixes, fp=None):
     '''
     Create custom wordlist based on rules defined in <config>
 
-    @param config file path
+    @param list of prefixes
+    @param string file path
     @return list of custom passwords
     '''
-    tmp = 0
+    trans = Transform()
+    workers = []
+    workers.append(Process(target=trans.gen_list, args=(fp, )))
+    workers.append(Process(target=_wait_deco, args=(prefixes, )))
+    print(prefixes[2]+"Starting password generator...")
+    for worker in workers:
+        worker.start()
+
+    for worker in workers:
+        worker.join()
+
+    print(prefixes[1]+"Passwords created")
 
 def _check_hash(word_list, hashed, prefixes):
     '''
@@ -237,19 +238,33 @@ class Transform(object):
         try:
             with open("trans.conf","r") as conf:
                 self.in_list = conf.readlines()
-        except IOError as e:
+            if len(self.in_list) < 1:
+                raise IOError("trans.conf is empty")
+        except IOError:
             raise IOError("trans.conf not found")
 
-    def gen_list(self):
+    def gen_list(self, fp):
         '''
         Return custom list
 
-        @param none
-        @return custom password list
+        @param string file path
+        @return none
         '''
-        #return self._parse_config()
-        inter_list = self._parse_config()
-        return self._xform(inter_list)
+        if fp is None:
+            fp = "custom_list.txt"
+
+        self.fp = fp
+        try:
+            inter_list = self._parse_config()
+        except IOError:
+            raise IOError("trans.conf is empty")
+        
+        output = self._xform(inter_list)
+        with open(fp, "w+") as out:
+            for item in output:
+                out.write("{}\n".format(item))
+
+        res_queue.put(fp)
 
     def get_config(self):
         '''
@@ -277,11 +292,9 @@ class Transform(object):
                 else:
                     final_list.extend(self._mod_str(item.get('str').strip('\n')))
             else:
-                
-                if isinstance(item.get('str'), list):
-                    #print("here")
-                    final_list.extend(self._mod_str_combine(item.get('str'),item.get('mods')))
 
+                final_list.extend(self._mod_str(self._mod_str_combine(item.get('str'),item.get('mods'))))
+                
         return final_list
 
     def _mod_str(self, in_str):
@@ -324,12 +337,12 @@ class Transform(object):
                 # send list of base strings to remaining modifiers
                 for item in inter_list:
                     final_list.extend(self._add_nums(item))
-                    final_list.extend(self.spcl_chars(item))
-                    final_list.extend(self.spcl_chars(self._every_other_upper_leading(item)))
-                    final_list.extend(self.spcl_chars(self._every_other_upper_trailing(item)))
-                    final_list.extend(self.spcl_chars(self._leet(item)))
-                    final_list.extend(self.spcl_chars(self._first_letter_upper(item)))
-                    final_list.extend(self.spcl_chars(self._add_nums(item)))
+                    final_list.extend(self._spcl_chars(item))
+                    final_list.extend(self._spcl_chars(self._every_other_upper_leading(item)))
+                    final_list.extend(self._spcl_chars(self._every_other_upper_trailing(item)))
+                    final_list.extend(self._spcl_chars(self._leet(item)))
+                    final_list.extend(self._spcl_chars(self._first_letter_upper(item)))
+                    final_list.extend(self._spcl_chars(self._add_nums(item)))
         elif isinstance(in_str, list):
             for item in in_str:
                 inter_list = []
@@ -350,8 +363,8 @@ class Transform(object):
                     final_list.extend(self._spcl_chars(self._every_other_upper_trailing(word)))
                     final_list.extend(self._spcl_chars_lst(self._add_nums(word)))
 
-                if " " in in_str:
-                    no_space = self._no_spaces(in_str)
+                if " " in item:
+                    no_space = self._no_spaces(item)
                     inter_list = []
                     inter_list.append(no_space)
                     inter_list.append(self._every_other_upper_leading(no_space))
@@ -361,12 +374,12 @@ class Transform(object):
                     final_list.extend(inter_list)
                     for word in inter_list:
                         final_list.extend(self._add_nums(word))
-                        final_list.extend(self.spcl_chars(word))
-                        final_list.extend(self.spcl_chars(self._every_other_upper_leading(word)))
-                        final_list.extend(self.spcl_chars(self._every_other_upper_trailing(word)))
-                        final_list.extend(self.spcl_chars(self._leet(word)))
-                        final_list.extend(self.spcl_chars(self._first_letter_upper(word)))
-                        final_list.extend(self.spcl_chars(self._add_nums(word)))
+                        final_list.extend(self._spcl_chars(word))
+                        final_list.extend(self._spcl_chars(self._every_other_upper_leading(word)))
+                        final_list.extend(self._spcl_chars(self._every_other_upper_trailing(word)))
+                        final_list.extend(self._spcl_chars(self._leet(word)))
+                        final_list.extend(self._spcl_chars(self._first_letter_upper(word)))
+                        final_list.extend(self._spcl_chars_lst(self._add_nums(word)))
 
         return final_list
 
@@ -379,22 +392,30 @@ class Transform(object):
         @return combined string list
         '''
         final_list = []
-        '''
-        Using max memory in _append_to
 
-        essentially crashes host
-        '''
-        def _append_to(in_lst, in_str):
-            final_list = list(in_lst)
-            for item in in_lst:
-                final_list.append(item+in_str)
+        def _append_to(in_str, in_lst):
+            '''
+            Append either string or list item to in_list
+            
+            @param string
+            @param string or string list
+            @return string list
+            '''
+            final_list = []
+            if isinstance(in_lst, str):
+                final_list.append(in_str+in_lst)
+            else:
+                for item in in_lst:
+                    final_list.append(in_str+item)
+
             return final_list
 
         def _mod(in_str):
             '''
-            Modify this to include the following
-            EX INPUT: 1/25/1996
-            EX OUTPUT: 1996, 96, jan 25 1996, 25 jan 1996
+            Adds password modifiers
+
+            @param string
+            @return string list
             '''
             final_list = []
             int_to_str = {
@@ -409,56 +430,64 @@ class Transform(object):
             }
             date_dd_mm_yyyy_sl = re.compile('.*/.*/.*')
             date_dd_mm_yyyy_ds = re.compile('.*-.*-.*')
-            year = re.compile('.{4}')
+            date_yyyy = re.compile('\d{4}$')
             date_words = ""
-            if date_dd_mm_yyyy_sl.match(in_mod_lst) or date_dd_mm_yyyy_ds.match(in_mod_lst):
+            if date_dd_mm_yyyy_sl.match(in_str) or date_dd_mm_yyyy_ds.match(in_str):
                 date_lst = []
-                if date_dd_mm_yyyy_sl.match(in_mod_lst):
-                    date_lst = in_mod_lst.split('/')
-                elif date_dd_mm_yyyy_ds.match(in_mod_lst):
-                    date_lst = in_mod_lst.split('-')
-                print(date_lst)
+                
+                if date_dd_mm_yyyy_sl.match(in_str):
+                    date_lst = in_str.split('/')
+                elif date_dd_mm_yyyy_ds.match(in_str):
+                    date_lst = in_str.split('-')
+
+                date_words += " "
                 date_words += int_to_str.get(int(date_lst[0]))+" "
                 date_words += int_to_str.get(int(date_lst[1]))+" "
                 year = list(map(int, date_lst[2]))
+                
                 for digit in year:
-                    date_words += int_to_str.get(digit)+" "
-                # date should now be in the following format
-                # EX: 01/12/1990
-                #     one twelve one nine nine zero
-                date_words.rstrip(" ")
+                    date_words += int_to_str.get(digit)+" " 
+                
+                if len(date_lst[2]) == 4:
+                    final_list.append(date_lst[2][2:]) # add 2 digit year
+
+                final_list.append(in_str)
+                final_list.append(date_lst[0])
+                final_list.append(date_lst[1])
+                final_list.append(date_lst[2]) # add 4 digit year (or whatever is in this element)
+                final_list.append(date_words.rstrip(" ")) # add string version of year
             else:
                 try:
+                    final_list.append(in_str)
+                    if date_yyyy.match(in_str) and len(in_str) == 4:
+                        final_list.append(in_str[2:])
                     year = list(map(int, in_str))
+                    date_words += " "
                     for digit in year:
                         date_words += int_to_str.get(digit)+" "
-                    date_words.rstrip(" ")
+                    final_list.append(date_words.rstrip(" "))
                 except:
-                    date_words = in_str
+                    final_list.append(in_str)
 
-            return date_words
+            return final_list
 
-        def _date_mod(in_str):
-            
-                
         if isinstance(in_str, list):
             final_list.extend(self._str_combine(in_str))
         else:
             final_list.append(in_str)
             
-        if isinstance(in_mod_lst, str):
-            final_list.extend(_append_to(final_list, _mod(in_mod_lst)))
-        else:
-            for item in in_mod_lst:
-                final_list.extend(_append_to(final_list, _mod(item)))
-
-        ##################################################################
-        ############## DEBUG ############################################
-        print(len(final_list))
+        inter_list = []
+        
         for item in final_list:
-            print(item)
-        sys.exit(0)
-        #################################################################
+
+            if isinstance(in_mod_lst, str):
+                inter_list.extend(_append_to(item, _mod(in_mod_lst)))
+            else:
+                for mod in in_mod_lst:
+                    inter_list.extend(_append_to(item, _mod(mod)))
+
+        final_list.extend(inter_list)
+            
         return final_list
 
     def _str_combine(self, in_lst):
@@ -534,9 +563,6 @@ class Transform(object):
 
         for item in inter_list:
             final_list.append(item)
-            final_list.append(self._first_letter_upper(item))
-            final_list.append(self._no_spaces(self._first_letter_upper(item)))
-            final_list.append(self._no_spaces(item))
 
         return final_list
 
@@ -580,7 +606,8 @@ class Transform(object):
                             'mods':mod_data
                     }
                     inter_list.append(data)
-
+        if len(inter_list) < 1:
+            raise IOError
         return inter_list
 
     def _spcl_chars_lst(self, in_lst):
@@ -614,8 +641,7 @@ class Transform(object):
         spcl_chars = ["!","@",
                       "#","$",
                       "%","^",
-                      "&","*",
-                      "(",")"
+                      "&","*"
         ]
         for spcl in spcl_chars:
             final_list.append(in_str+spcl)
@@ -704,11 +730,6 @@ class Transform(object):
         for i in range(0,10):
             for j in range(0,10):
                 formatted.append(in_str+str(i)+str(j))
-
-        for i in range(0,10):
-            for j in range(0,10):
-                for k in range(0,10):
-                    formatted.append(in_str+str(i)+str(j)+str(k))
 
         return formatted
         
