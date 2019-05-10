@@ -9,10 +9,10 @@ Currently supports md5, sha224, sha384, sha512, sha1, sha256, LM, and Base64 enc
 
 **Install**
 
-```git clone https://github.com/cWjL/passwd_games.git```
-```cd passwd_games```
-```pip install -r requirements.txt```
-```chmod +x passwd_games.py```
+```git clone https://github.com/cWjL/passwd_games.git```<br />
+```cd passwd_games```<br />
+```pip install -r requirements.txt```<br />
+```chmod +x passwd_games.py```<br />
 
 **Platform**
 
@@ -38,8 +38,8 @@ optional arguments:
 **Example**
 
 Run against md5 hashed string "String" using rockyou.txt wordlist:<br />
-```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc```
+```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc```<br />
 Run against md5 hashed string "String" using custom wordlist:<br />
-```./passwd_games.py -s fd8ef8f17659355d2358200baa5f8cdc -c```
+```./passwd_games.py -s fd8ef8f17659355d2358200baa5f8cdc -c```<br />
 Run against md5 hashed string "String" with custom wordlist prepended to rockyou.txt:<br />
-```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc -c```
+```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc -c```<br />
