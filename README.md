@@ -9,7 +9,7 @@ Currently supports md5, sha224, sha384, sha512, sha1, sha256, LM, and Base64 enc
 
 **Install**
 
-```git clone https://github.com/cWjL/passwd_games.git```<br />
+```git clone https://github.com/cWjL/quick_and_dirty.git```<br />
 ```cd passwd_games```<br />
 ```pip install -r requirements.txt```<br />
 ```chmod +x passwd_games.py```<br />
