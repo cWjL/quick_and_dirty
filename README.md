@@ -1,13 +1,45 @@
-# quick_hash
-Tested on debian 8 with python 2.7.
+# passwrd_games
 
-Check a hashed password against a provided word list.
 
-Usage:  quick_hash.py [path-to-wordlist] [hashed-password]
+Script to check a hashed string against either a wordlist or a custom wordlist, as fast as possible.<br />
 
-Script will run [hashed-password] against the contents of the supplied wordlist by checking
-every line in the file using md5, sha1, sha224, sha256, sha512, and LM hashing algorithms.
+Will spawn as many processes as there are processor cores on the system on which it's run.<br />
 
-If a match is found, the "unhashed" plaintext password and hash algorithm used to find it will be presented.
+Currently supports md5, sha224, sha384, sha512, sha1, sha256, LM, and Base64 encoded strings.<br /> 
 
-To hash a string from terminal: echo -n qwerty | md5sum
+**Install**
+
+```git clone https://github.com/cWjL/passwd_games.git```
+```cd passwd_games```
+```pip install -r requirements.txt```
+```chmod +x passwd_games.py```
+
+**Platform**
+
+&nbsp;python 3
+
+**Custom Wordlist Config File**
+
+The custom wordlist option uses a configuration file, ```trans.conf```, located in the root installation directory, to build the list. The first several lines of ```trans.conf``` describes it's usage.
+
+**Usage**
+```
+usage: passwd_games.py [-h] [-w LIST] [-s HASH] [-c]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -w LIST, --wordlist LIST
+                        Path to wordlist
+  -s HASH, --hash-string HASH
+                        Hashed string
+  -c, --custom          Create custom list from [CONF]
+```
+
+**Example**
+
+Run against md5 hashed string "String" using rockyou.txt wordlist:<br />
+```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc```
+Run against md5 hashed string "String" using custom wordlist:<br />
+```./passwd_games.py -s fd8ef8f17659355d2358200baa5f8cdc -c```
+Run against md5 hashed string "String" with custom wordlist prepended to rockyou.txt:<br />
+```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc -c```
