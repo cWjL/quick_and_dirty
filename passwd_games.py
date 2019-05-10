@@ -10,7 +10,7 @@ from threading import Thread
 import multiprocessing
 from multiprocessing import Queue, Process
 from passlib.hash import lmhash
-import hashlib, argparse, sys
+import hashlib, argparse, sys, os
 import base64, time, re, random
 from itertools import islice
 
@@ -61,11 +61,9 @@ def main():
         print(b_prefix+"You need to supply a hashed string as an argument")
         parser.print_help()
         sys.exit(0)
-    elif args.list and args.hash and args.conf:
-        print(b_prefix+"Either generate a list or provide one, not both")
-        parser.print_help()
-        sys.exit(0)
 
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    
     if args.list and args.hash and not args.conf:
         found = _check_hash(args.list, args.hash, prefixes)
     elif args.hash and args.conf and not args.list:
@@ -76,6 +74,29 @@ def main():
             sys.exit(1)
         cust_lst = res_queue.get()
         found = _check_hash(cust_lst, args.hash, prefixes)
+        if "win" in sys.platform:
+            dir_path += "\\"+cust_list
+        elif "linux" in sys.platform:
+            dir_path += "/"+cust_list
+        print(n_prefix+"Custom list written to: "+dir_path)
+    elif args.list and args.hash and args.conf:
+        try:
+            _create_custom(prefixes)
+        except IOError as e:
+            print(b_prefix+str(e))
+            sys.exit(1)
+        cust_lst = res_queue.get()
+        if "win" in sys.platform:
+            dir_path += "\\"+cust_lst
+        elif "linux" in sys.platform:
+            dir_path += "/"+cust_lst
+        print(n_prefix+"Custom list written to: "+dir_path)
+        print(n_prefix+"Adding custom list to existing list")
+        tmp = []
+        with open(dir_path, "r") as new_lst:
+            tmp = new_lst.readlines()
+
+        found = _check_hash(_prepend(args.list, tmp, prefixes), args.hash, prefixes)
         
     if found is not None:
         print(g_prefix+"Password found: "+found[1]+":"+found[0])
@@ -181,15 +202,15 @@ def _prepend(fp, custom, prefixes):
         file_name = fp[fp.rfind('/')+1:]
         file_path = fp[:fp.rfind('/')+1]
 
-    print(prefixex[2]+"Copying new passwords to wordlist")
+    print(prefixes[2]+"Copying new passwords to wordlist")
     with open(fp) as old:
-        with open(file_path+"new_"+file_name, "w") as new:
+        with open(file_path+"custom_"+file_name, "w") as new:
             for nl in custom:
-                new.write(nl+'\n')
+                new.write(nl)
             for line in old:
                 new.write(line)
                 
-    print(prefixex[1]+"Copy done. New file: "+file_path+"new_"+file_name)
+    print(prefixes[1]+"Copy done. New file: "+file_path+"new_"+file_name)
 
     return file_path+"new_"+file_name        
 
