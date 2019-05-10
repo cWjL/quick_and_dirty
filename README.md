@@ -1,4 +1,4 @@
-# passwrd_games
+# passwd_games
 
 
 Script to check a hashed string against either a wordlist or a custom wordlist, as fast as possible.<br />
