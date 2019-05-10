@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 '''
-Test speed against orig version with string: 0839236891
-cat rockyou.txt | grep -n 0839236891
-14344321: 0839236891
-echo -n 0839236891 | md5sum
+@author Jacob Loden
+
 '''
 
 from threading import Thread
