@@ -16,7 +16,7 @@ Currently supports md5, sha224, sha384, sha512, sha1, sha256, LM, and Base64 enc
 
 **Platform**
 
-&nbsp;python 3
+&nbsp;```python 3```
 
 **Custom Wordlist Config File**
 
@@ -38,8 +38,8 @@ optional arguments:
 **Example**
 
 Run against md5 hashed string "String" using rockyou.txt wordlist:<br />
-```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc```<br />
+```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc```<br /><br />
 Run against md5 hashed string "String" using custom wordlist:<br />
-```./passwd_games.py -s fd8ef8f17659355d2358200baa5f8cdc -c```<br />
+```./passwd_games.py -s fd8ef8f17659355d2358200baa5f8cdc -c```<br /><br />
 Run against md5 hashed string "String" with custom wordlist prepended to rockyou.txt:<br />
 ```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc -c```<br />
