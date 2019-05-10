@@ -75,9 +75,9 @@ def main():
         cust_lst = res_queue.get()
         found = _check_hash(cust_lst, args.hash, prefixes)
         if "win" in sys.platform:
-            dir_path += "\\"+cust_list
+            dir_path += "\\"+cust_lst
         elif "linux" in sys.platform:
-            dir_path += "/"+cust_list
+            dir_path += "/"+cust_lst
         print(n_prefix+"Custom list written to: "+dir_path)
     elif args.list and args.hash and args.conf:
         try:
