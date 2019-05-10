@@ -1,5 +1,5 @@
-# passwd_games
-
+# quick_and_dirty
+**Quick and dirty password crack**
 
 Script to check a hashed string against either a wordlist or a custom wordlist, as fast as possible.<br />
 
