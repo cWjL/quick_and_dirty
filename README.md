@@ -10,9 +10,9 @@ Currently supports md5, sha224, sha384, sha512, sha1, sha256, LM, and Base64 enc
 **Install**
 
 ```git clone https://github.com/cWjL/quick_and_dirty.git```<br />
-```cd passwd_games```<br />
+```cd quick_and_dirty```<br />
 ```pip install -r requirements.txt```<br />
-```chmod +x passwd_games.py```<br />
+```chmod +x qad.py```<br />
 
 **Platform**
 
@@ -24,7 +24,7 @@ The custom wordlist option uses a configuration file, ```trans.conf```, located 
 
 **Usage**
 ```
-usage: passwd_games.py [-h] [-w LIST] [-s HASH] [-c]
+usage: qad.py [-h] [-w LIST] [-s HASH] [-c]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -38,8 +38,8 @@ optional arguments:
 **Example**
 
 Run against md5 hashed string "String" using rockyou.txt wordlist:<br />
-```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc```<br /><br />
+```./qad.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc```<br /><br />
 Run against md5 hashed string "String" using custom wordlist:<br />
-```./passwd_games.py -s fd8ef8f17659355d2358200baa5f8cdc -c```<br /><br />
+```./qad.py -s fd8ef8f17659355d2358200baa5f8cdc -c```<br /><br />
 Run against md5 hashed string "String" with custom wordlist prepended to rockyou.txt:<br />
-```./passwd_games.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc -c```<br />
+```./qad.py -w ~/wordlists/rockyou.txt -s fd8ef8f17659355d2358200baa5f8cdc -c```<br />
