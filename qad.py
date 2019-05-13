@@ -293,6 +293,15 @@ class Transform(object):
         @reutrn stripped config list
         '''
         return self.in_list
+
+    def get_count(self):
+        '''
+        Return the number of items that will be created
+
+        @param non
+        @return int count
+        '''
+        inter_list = self.parse_config()
     
     def _xform(self, inter_list):
         '''
