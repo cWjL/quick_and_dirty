@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 '''
 @author Jacob Loden
 
 '''
 
-from threading import Thread
 import multiprocessing
 from multiprocessing import Queue, Process
 from passlib.hash import lmhash
@@ -240,7 +240,7 @@ def _wait_deco(prefixes):
             break
         if i % 7 == 0:
             i = 3
-        print(prefixes[i], end='\r')
+        print(prefixes[i]+"Please wait...", end='\r')
         i += 1
         time.sleep(.5)
 
@@ -753,7 +753,7 @@ class Transform(object):
         return formatted
         
 
-class Worker(Thread):
+class Worker(object):
     '''
     Multiprocessing worker thread
     '''
@@ -766,7 +766,6 @@ class Worker(Thread):
         @param hashed string to test
         @return none
         '''
-        Thread.__init__(self)
         self.words = list
         self.target = hash
 
