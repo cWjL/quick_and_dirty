@@ -141,8 +141,8 @@ def _check_hash(word_list, hashed, prefixes):
     try:
         sz = sum(1 for i in open(word_list, 'rb'))
         print(prefixes[2]+"Wordlist length: "+str(sz))
-    except IOError:
-        print(prefixes[0]+"IOError")
+    except IOError as e:
+        print(prefixes[0]+"IOError: "+str(e))
         sys.exit(1)
        
     div = int(sz/MAX_THREADS)
@@ -163,8 +163,8 @@ def _check_hash(word_list, hashed, prefixes):
             worker = Worker(_div_list(word_list, i, i+incr), hashed)
             worker_p = Process(target=worker.run)
             workers.append(worker_p)
-    except IOError:
-        print(prefixes[0]+"IOError")
+    except IOError as e:
+        print(prefixes[0]+"IOError: "+str(e))
 
     workers.append(Process(target=_wait_deco, args=(prefixes, )))
 
