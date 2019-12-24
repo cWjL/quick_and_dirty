@@ -61,46 +61,47 @@ def main():
         sys.exit(0)
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    
-    if args.list and args.hash and not args.conf:
-        found = _check_hash(args.list, args.hash, prefixes)
-    elif args.hash and args.conf and not args.list:
-        try:
-            _create_custom(prefixes)
-        except IOError as e:
-            print(b_prefix+str(e))
-            sys.exit(1)
-        cust_lst = res_queue.get()
-        found = _check_hash(cust_lst, args.hash, prefixes)
-        if "win" in sys.platform:
-            dir_path += "\\"+cust_lst
-        elif "linux" in sys.platform:
-            dir_path += "/"+cust_lst
-        print(n_prefix+"Custom list written to: "+dir_path)
-    elif args.list and args.hash and args.conf:
-        try:
-            _create_custom(prefixes)
-        except IOError as e:
-            print(b_prefix+str(e))
-            sys.exit(1)
-        cust_lst = res_queue.get()
-        if "win" in sys.platform:
-            dir_path += "\\"+cust_lst
-        elif "linux" in sys.platform:
-            dir_path += "/"+cust_lst
-        print(n_prefix+"Custom list written to: "+dir_path)
-        print(n_prefix+"Adding custom list to existing list")
-        tmp = []
-        with open(dir_path, "r") as new_lst:
-            tmp = new_lst.readlines()
+    try:
+        if args.list and args.hash and not args.conf:
+            found = _check_hash(args.list, args.hash, prefixes)
+        elif args.hash and args.conf and not args.list:
+            try:
+                _create_custom(prefixes)
+            except IOError as e:
+                print(b_prefix+str(e))
+                sys.exit(1)
+                cust_lst = res_queue.get()
+                found = _check_hash(cust_lst, args.hash, prefixes)
+            if "win" in sys.platform:
+                dir_path += "\\"+cust_lst
+            elif "linux" in sys.platform:
+                dir_path += "/"+cust_lst
+                print(n_prefix+"Custom list written to: "+dir_path)
+        elif args.list and args.hash and args.conf:
+            try:
+                _create_custom(prefixes)
+            except IOError as e:
+                print(b_prefix+str(e))
+                sys.exit(1)
+                cust_lst = res_queue.get()
+            if "win" in sys.platform:
+                dir_path += "\\"+cust_lst
+            elif "linux" in sys.platform:
+                dir_path += "/"+cust_lst
+                print(n_prefix+"Custom list written to: "+dir_path)
+                print(n_prefix+"Adding custom list to existing list")
+                tmp = []
+            with open(dir_path, "r") as new_lst:
+                tmp = new_lst.readlines()
 
-        found = _check_hash(_prepend(args.list, tmp, prefixes), args.hash, prefixes)
-        
-    if found is not None:
-        print(g_prefix+"Password found: "+found[1]+":"+found[0])
-    else:
-        print(b_prefix+"No password found")
-        
+            found = _check_hash(_prepend(args.list, tmp, prefixes), args.hash, prefixes)
+
+        if found is not None:
+            print(g_prefix+"Password found: "+found[1]+":"+found[0])
+        else:
+            print(b_prefix+"No password found")
+    except KeyBoardInterrupt:
+        print(b_prefix+"User interrupt")
     sys.exit(0)
 
 def _create_custom(prefixes, fp=None):
@@ -134,8 +135,8 @@ def _check_hash(word_list, hashed, prefixes):
     @param list of prefixes
     @return found password (if found), None otherwise
     '''
-
-    MAX_THREADS = multiprocessing.cpu_count()
+    # Save 1 thread for the wordlist remainder, and 1 for the animation
+    MAX_THREADS = multiprocessing.cpu_count()-2
     workers = []
 
     try:
@@ -147,10 +148,13 @@ def _check_hash(word_list, hashed, prefixes):
        
     div = int(sz/MAX_THREADS)
     rem = sz - int(div*MAX_THREADS)
+    
     incr = div
     i = 0
-    print(prefixes[2]+"Using: "+str(MAX_THREADS)+" cores")
+    print(prefixes[2]+"Using: "+str(MAX_THREADS+2)+" cores")
     print(prefixes[2]+"Words per thread: "+str(div)+" +/- "+str(rem))
+    #print("div: "+str(div)+" rem: "+str(rem)+" MAX_THREADS: "+str(MAX_THREADS))
+    #sys.exit(0)
     try:
         for turn in range(MAX_THREADS):
             print(prefixes[2]+"Getting section: "+str(turn), end='\r', flush=True)
@@ -165,7 +169,7 @@ def _check_hash(word_list, hashed, prefixes):
             workers.append(worker_p)
     except IOError as e:
         print(prefixes[0]+"IOError: "+str(e))
-
+    print(prefixes[2]+"Adding wait thread")
     workers.append(Process(target=_wait_deco, args=(prefixes, )))
 
     print(prefixes[2]+"Created: "+str(len(workers))+" threads")
